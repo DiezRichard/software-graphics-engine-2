@@ -1,0 +1,33 @@
+{
+  "name": "getColor",
+  "short_name": "getColor",
+  "description": "3D engine on 2D canvas.",
+  "id": "/",
+  "start_url": "/?source=pwa",
+  "scope": "/",
+  "display": "fullscreen",
+  "orientation": "any",
+  "lang": "es",
+  "dir": "ltr",
+  "theme_color": "#000000",
+  "background_color": "#ffffff",
+  "categories": ["utilities", "productivity"],
+  "iarc_rating_id": "e10c5d24-0000-0000-0000-000000000000",
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any"
+    }
+  ],
+  "launch_handler": {
+    "client_mode": "navigate-existing"
+  }
+}

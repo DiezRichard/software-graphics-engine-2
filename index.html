@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="manifest" href="manifest.json">
+<title>getColor - benchmark</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+ 
+
+
+<div id="outerDiv">
+ 
+<!--CANVAS-->
+<div id="canvasDiv">
+<canvas id="myCanvas" width="1706" height="1706" style="width: 700px; height: 700px;"></canvas>
+</div><!--canvasDiv-->
+
+<!-- Joystick Izquierdo -->
+<div id="joystick-left-base">
+ <div id="joystick-left-stick"></div>
+</div>
+
+<!-- Joystick Derecho -->
+<div id="joystick-right-base">
+ <div id="joystick-right-stick"></div>
+</div>
+ 
+
+ 
+<div id="control-panel" style="display:none;">
+
+
+<div class="control-group">
+<span class="control-label"> - </span>
+<div class="button-row">
+ 
+</div>
+</div>
+
+
+<div class="control-group">
+<span class="control-label">Grid Size</span>
+<div class="button-row">
+<button class="control-btn" onclick="gridSize--">−</button>
+<button class="control-btn" onclick="gridSize++">+</button>
+</div>
+</div>
+
+<div class="control-group">
+<span class="control-label">Tile Scale</span>
+<div class="button-row">
+<button class="control-btn" onclick="tileScale -= 0.1">−</button>
+<button class="control-btn" onclick="tileScale += 0.1">+</button>
+</div>
+</div>
+
+<div class="control-group">
+<span class="control-label">Offset</span>
+<div class="button-row">
+<button class="control-btn" onclick="offset -= 10">−</button>
+<button class="control-btn" onclick="offset += 10">+</button>
+</div>
+</div>
+
+<div class="control-group">
+<span class="control-label">Noise Frequency</span>
+<div class="button-row">
+<button class="control-btn" onclick="frequency -= 0.005">−</button>
+<button class="control-btn" onclick="frequency += 0.005">+</button>
+</div>
+</div>
+
+<div class="control-group">
+<span class="control-label">Beef (Height)</span>
+<div class="button-row">
+<button class="control-btn" onclick="beef -= 5">−</button>
+<button class="control-btn" onclick="beef += 5">+</button>
+</div>
+</div>
+
+ <div class="control-group">
+<span class="control-label">Shading Steps</span>
+<div class="button-row">
+<button class="control-btn" onclick="adjustShadingSteps(-2)">−</button>
+<span id="shadingStepsDisplay">30</span>
+<button class="control-btn" onclick="adjustShadingSteps(2)">+</button>
+</div>
+</div> 
+
+<div style="display:none;"> <!-- hide -->
+
+
+<div class="control-group">
+<span class="control-label">Clip by Distance</span>
+<div class="button-row">
+<button class="control-btn" onclick="isClipByDist = !isClipByDist; this.innerText = isClipByDist ? 'ON' : 'OFF'">OFF</button>
+</div>
+</div>
+
+<div class="control-group">
+<span class="control-label">Clip by Angle</span>
+<div class="button-row">
+<button class="control-btn" onclick="isClipByAngle = !isClipByAngle; this.innerText = isClipByAngle ? 'ON' : 'OFF'">OFF</button>
+</div>
+</div>
+
+<div class="control-group">
+<span class="control-label">Clip by Tri Size</span>
+<div class="button-row">
+<button class="control-btn" onclick="isClipByTriSize = !isClipByTriSize; this.innerText = isClipByTriSize ? 'ON' : 'OFF'">OFF</button>
+</div>
+</div>
+
+<div class="control-group">
+<span class="control-label">Clip by Plane</span>
+<div class="button-row">
+<button class="control-btn" onclick="isClipByPlane = !isClipByPlane; this.innerText = isClipByPlane ? 'ON' : 'OFF'">OFF</button>
+</div>
+</div>
+
+<div class="control-group">
+<span class="control-label">Sort Tris by Distance</span>
+<div class="button-row">
+<button class="control-btn" onclick="isSortTriDist = !isSortTriDist; this.innerText = isSortTriDist ? 'ON' : 'OFF'">OFF</button>
+</div>
+</div>
+
+
+<div class="control-group">
+<span class="control-label">Sort Meshes by Distance</span>
+<div class="button-row">
+<button class="control-btn" onclick="isSortMeshesDist = !isSortMeshesDist; this.innerText = isSortMeshesDist ? 'ON' : 'OFF'">OFF</button>
+</div>
+</div>
+
+
+<div class="control-group">
+<span class="control-label">-</span>
+<div class="button-row">
+ 
+</div>
+</div>
+
+  
+</div>
+
+</div> <!-- /control-panel -->
+
+</div><!--outerDiv-->
+
+
+<!--GENERAL-->
+<script src="variables.js"></script>
+
+<script src="utilities.js"></script>
+
+<script src="actions.js"></script>
+<script src="fall.js"></script>
+
+<script src="background.js"></script>
+
+<script src="draw.js"></script>
+<script src="perlin.js"></script>
+<script src="proceduralLand.js"></script>
+<script src="js.js"></script>
+
+
+<script>
+if ("serviceWorker" in navigator) {
+window.addEventListener("load", () => {
+navigator.serviceWorker.register("/service-worker.js").catch((err) => {
+console.error("Service Worker registration failed:", err);
+});
+});
+}
+</script>
+
+
+
+</body></html>
