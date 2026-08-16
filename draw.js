@@ -420,60 +420,57 @@ function flatShading(triIndexList) {
 //-----------------------//
 
 function stepShading(triIndexList) {
+  // Optimized: reduce allocations and per-triangle object creation
   const ambient = 0.5;
   const invAmbient = 1 - ambient;
   const weighted1 = invAmbient * 0.5;
   const weighted2 = invAmbient * 0.8;
 
-  let ux, uy, uz, vx, vy, vz, nx, ny, nz, lenSq, invLen;
+  const vBuf = vertexBuffer;
+  const iBuf = indexBuffer;
+  const cBuf = colorBuffer;
+  const sSteps = (shadingSteps | 0) || 1;
+
+  const lx1 = lightDir1.x, ly1 = lightDir1.y, lz1 = lightDir1.z;
+  const lx2 = lightDir2.x, ly2 = lightDir2.y, lz2 = lightDir2.z;
 
   for (let i = 0; i < triIndexList.length; i++) {
-    let triBase = triIndexList[i];
+    const triBase = triIndexList[i];
 
-    let vi0 = indexBuffer[triBase + 0];
-    let vi1 = indexBuffer[triBase + 1];
-    let vi2 = indexBuffer[triBase + 2];
+    const vi0 = iBuf[triBase + 0];
+    const vi1 = iBuf[triBase + 1];
+    const vi2 = iBuf[triBase + 2];
 
-    let x0 = vertexBuffer[vi0 * 3];
-    let y0 = vertexBuffer[vi0 * 3 + 1];
-    let z0 = vertexBuffer[vi0 * 3 + 2];
+    const x0 = vBuf[vi0 * 3],     y0 = vBuf[vi0 * 3 + 1], z0 = vBuf[vi0 * 3 + 2];
+    const x1 = vBuf[vi1 * 3],     y1 = vBuf[vi1 * 3 + 1], z1 = vBuf[vi1 * 3 + 2];
+    const x2 = vBuf[vi2 * 3],     y2 = vBuf[vi2 * 3 + 1], z2 = vBuf[vi2 * 3 + 2];
 
-    let x1 = vertexBuffer[vi1 * 3];
-    let y1 = vertexBuffer[vi1 * 3 + 1];
-    let z1 = vertexBuffer[vi1 * 3 + 2];
+    const ux = x1 - x0, uy = y1 - y0, uz = z1 - z0;
+    const vx = x2 - x0, vy = y2 - y0, vz = z2 - z0;
 
-    let x2 = vertexBuffer[vi2 * 3];
-    let y2 = vertexBuffer[vi2 * 3 + 1];
-    let z2 = vertexBuffer[vi2 * 3 + 2];
+    let nx = uy * vz - uz * vy;
+    let ny = uz * vx - ux * vz;
+    let nz = ux * vy - uy * vx;
 
-    ux = x1 - x0; uy = y1 - y0; uz = z1 - z0;
-    vx = x2 - x0; vy = y2 - y0; vz = z2 - z0;
-
-    nx = uy * vz - uz * vy;
-    ny = uz * vx - ux * vz;
-    nz = ux * vy - uy * vx;
-
-    lenSq = nx * nx + ny * ny + nz * nz;
+    const lenSq = nx * nx + ny * ny + nz * nz;
     if (lenSq === 0) continue;
-    invLen = 1 / Math.sqrt(lenSq);
-    nx *= invLen;
-    ny *= invLen;
-    nz *= invLen;
+    const invLen = 1 / Math.sqrt(lenSq);
+    nx *= invLen; ny *= invLen; nz *= invLen;
 
-    let d1 = Math.max(0, nx * lightDir1.x + ny * lightDir1.y + nz * lightDir1.z);
-    let d2 = Math.max(0, nx * lightDir2.x + ny * lightDir2.y + nz * lightDir2.z);
+    const d1 = Math.max(0, nx * lx1 + ny * ly1 + nz * lz1);
+    const d2 = Math.max(0, nx * lx2 + ny * ly2 + nz * lz2);
 
     let dot = ambient + d1 * weighted1 + d2 * weighted2;
     if (dot > 1) dot = 1;
 
-    let level = (dot * shadingSteps)|0;
-    let stepped = level / shadingSteps;
+    const level = (dot * sSteps) | 0;
+    const stepped = level / sSteps;
     if (stepped === 0) continue;
 
-    let cBase = triBase;
-colorBuffer[cBase] = (colorBuffer[cBase] * stepped) | 0;
-colorBuffer[cBase + 1] = (colorBuffer[cBase + 1] * stepped) | 0;
-colorBuffer[cBase + 2] = (colorBuffer[cBase + 2] * stepped) | 0;
+    const base = triBase;
+    cBuf[base]     = (cBuf[base]     * stepped) | 0;
+    cBuf[base + 1] = (cBuf[base + 1] * stepped) | 0;
+    cBuf[base + 2] = (cBuf[base + 2] * stepped) | 0;
   }
 }
 //-----------------------//
@@ -506,56 +503,58 @@ function bakeShadows() {
 
 function drawMesh(tempIndex,ctx,meta) {
 
-//ctx.strokeStyle = `rgb(${0},${0},${0})`;
+// Optimized drawMesh: fewer allocations, cached buffer access, squared-distance test for stroke
+const triangleCount = tempIndex.length;
+const vBuf = vertexBuffer;
+const iBuf = indexBuffer;
+const cBuf = colorBuffer;
+const cam = camera;
 
-let triangleCount = tempIndex.length;
+const dx = meta.position.x - cam.position.x;
+const dy = meta.position.y - cam.position.y;
+const dz = meta.position.z - cam.position.z;
+const distSq = dx*dx + dy*dy + dz*dz;
+const maxStrokeDistSq = (maxStrokeDist || 900) * (maxStrokeDist || 900);
+const doStroke = (distSq < maxStrokeDistSq) || (meta.name === "cell");
 
-//ctx.beginPath();
-
-for (let i = 0; i < triangleCount; i++) {
-let triIndex = tempIndex[i];
-
-let i0 = indexBuffer[triIndex];
-let i1 = indexBuffer[triIndex + 1];
-let i2 = indexBuffer[triIndex + 2];
-
-let p0x = vertexBuffer[i0 * 3], p0y = vertexBuffer[i0 * 3 + 1];
-let p1x = vertexBuffer[i1 * 3], p1y = vertexBuffer[i1 * 3 + 1];
-let p2x = vertexBuffer[i2 * 3], p2y = vertexBuffer[i2 * 3 + 1];
-
-// Cambiar color por triángulo
-let r = colorBuffer[triIndex];
-let g = colorBuffer[triIndex+1];
-let b = colorBuffer[triIndex+2];
-ctx.fillStyle = `rgb(${r},${g},${b})`;
-ctx.strokeStyle = `rgb(${r},${g},${b})`;
-
-
-ctx.beginPath();
-ctx.moveTo(p0x, p0y);
-ctx.lineTo(p1x, p1y);
-ctx.lineTo(p2x, p2y);
-ctx.closePath();
-
-if(meta.name==="cell")
-{
- //ctx.stroke()
- ctx.fill()
+let lastR = -1, lastG = -1, lastB = -1;
+for (let t = 0; t < triangleCount; t++) {
+ const triIndex = tempIndex[t];
+ 
+ const vi0 = iBuf[triIndex];
+ const vi1 = iBuf[triIndex + 1];
+ const vi2 = iBuf[triIndex + 2];
+ 
+ const p0x = vBuf[vi0 * 3], p0y = vBuf[vi0 * 3 + 1];
+ const p1x = vBuf[vi1 * 3], p1y = vBuf[vi1 * 3 + 1];
+ const p2x = vBuf[vi2 * 3], p2y = vBuf[vi2 * 3 + 1];
+ 
+ const r = cBuf[triIndex];
+ const g = cBuf[triIndex + 1];
+ const b = cBuf[triIndex + 2];
+ 
+ // Set styles only when color changed
+ if (r !== lastR || g !== lastG || b !== lastB) {
+   const rgb = `rgb(${r},${g},${b})`;
+   ctx.fillStyle = rgb;
+   ctx.strokeStyle = rgb;
+   lastR = r; lastG = g; lastB = b;
+ }
+ 
+ ctx.beginPath();
+ ctx.moveTo(p0x, p0y);
+ ctx.lineTo(p1x, p1y);
+ ctx.lineTo(p2x, p2y);
+ ctx.closePath();
+ 
+ ctx.fill();
+ if (doStroke && meta.name !== "cell") ctx.stroke();
 }
-
-if(meta.name!=="cell")
-{
-ctx.stroke();
-ctx.fill();
-}
-
-
-}
-
 
 }
 
 const maxStrokeDist = 900;
+
 /*
 function drawMesh(tempIndex, ctx, meta) {
   const triangleCount = tempIndex.length;
@@ -626,4 +625,3 @@ function clearCanvases() {
  
 }
 
- 
